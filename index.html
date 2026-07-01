@@ -274,15 +274,15 @@
   /* self-drawing "Puru Ranjan" signature (used at the close + in the intro) */
   .sig{display:inline-block;position:relative;padding:4px 10px 20px;line-height:1}
   .sig-name{display:inline-block;
-    font-family:'Snell Roundhand','Brush Script MT','Segoe Script','Bradley Hand',cursive;
-    font-weight:600;font-size:clamp(46px,6.4vw,80px);letter-spacing:.5px;
-    background:linear-gradient(100deg,#eef4ff,#8fe9df 55%,#aeb9ff);-webkit-background-clip:text;background-clip:text;
+    font-family:-apple-system,"SF Pro Display","Segoe UI",Inter,Roboto,system-ui,sans-serif;
+    font-weight:600;font-size:clamp(32px,4.3vw,54px);letter-spacing:1.6px;
+    background:linear-gradient(100deg,#f2f6ff,#bfe7ff 58%,#dfe6ff);-webkit-background-clip:text;background-clip:text;
     -webkit-text-fill-color:transparent;color:transparent;
     -webkit-clip-path:inset(0 100% -20% -8%);clip-path:inset(0 100% -20% -8%);will-change:clip-path}
   .sig.go .sig-name{-webkit-clip-path:inset(0 -8% -20% -8%);clip-path:inset(0 -8% -20% -8%);
     transition:-webkit-clip-path 1.5s var(--ease-sig) .15s,clip-path 1.5s var(--ease-sig) .15s}
   .sig-underline{position:absolute;left:6px;right:6px;bottom:6px;width:calc(100% - 12px);height:22px;overflow:visible}
-  .sig-underline path{fill:none;stroke:url(#sigGrad);stroke-width:3;stroke-linecap:round;
+  .sig-underline path{fill:none;stroke:url(#sigGrad);stroke-width:2;stroke-linecap:round;
     stroke-dasharray:360;stroke-dashoffset:360}
   .sig.go .sig-underline path{stroke-dashoffset:0;transition:stroke-dashoffset 1.2s var(--ease-sig) .5s}
   .sig-pen{position:absolute;left:0;top:32%;width:9px;height:9px;border-radius:50%;

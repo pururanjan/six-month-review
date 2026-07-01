@@ -319,9 +319,25 @@
   .scrollcue.hide{opacity:0;pointer-events:none;animation:none}
   #stage>.scene:first-child .wrap{will-change:transform,opacity}
 
+  /* scroll-drawn doodle guide — descends the left margin, points in at the content */
+  .doodle{position:fixed;left:22px;top:96px;bottom:96px;width:74px;z-index:6;pointer-events:none;
+    opacity:0;transition:opacity .7s ease}
+  .doodle.lit{opacity:.92}
+  .doodle-rail{width:100%;height:100%;display:block;overflow:visible}
+  .doodle-rail path{fill:none;stroke:url(#doodleGrad);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 0 5px rgba(45,212,191,.35))}
+  .doodle-pen{position:absolute;top:0;left:0;width:40px;height:30px;margin:-15px 0 0 -6px;will-change:transform}
+  .doodle-pen-in{width:100%;height:100%;transform-origin:22% 50%;animation:penbob 2.6s ease-in-out infinite}
+  .doodle-pen svg{width:100%;height:100%;overflow:visible}
+  .doodle-pen path{fill:none;stroke:#c9fbf3;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 0 7px rgba(45,212,191,.85))}
+  @keyframes penbob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg) translateX(2px)}}
+  @media (max-width:1280px){ .doodle{display:none} }
+
   /* accessibility: honor reduced-motion */
   @media (prefers-reduced-motion: reduce){
     .aurora{display:none}
+    .doodle{display:none}
     .scene{filter:none}
     .intro{display:none!important}
     .scene h1,.scene h2,.sig-name{-webkit-clip-path:none!important;clip-path:none!important}
@@ -336,6 +352,9 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <linearGradient id="sigGrad" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0" stop-color="#2dd4bf"/><stop offset="0.55" stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+  </linearGradient>
+  <linearGradient id="doodleGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2dd4bf"/><stop offset="0.5" stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
   </linearGradient>
 </defs></svg>
 
@@ -353,6 +372,13 @@
 </div>
 
 <div class="scrollcue" id="scrollcue"><span>Scroll</span><i></i></div>
+
+<div class="doodle" id="doodle" aria-hidden="true">
+  <svg class="doodle-rail" preserveAspectRatio="none"><path id="doodlePath" d="M37,2"/></svg>
+  <div class="doodle-pen" id="doodlePen"><div class="doodle-pen-in">
+    <svg viewBox="0 0 40 30"><path d="M3,15 C12,9 20,21 30,15"/><path d="M24,9 L32,15 L24,21"/></svg>
+  </div></div>
+</div>
 
 <div class="aurora"><span></span><span></span><span></span></div>
 
@@ -919,6 +945,36 @@
     }
   }
 
+  // — scroll-drawn doodle guide (descends the left margin, points in at the content) —
+  var doodle = document.getElementById('doodle');
+  var doodleRail = doodle ? doodle.querySelector('.doodle-rail') : null;
+  var doodlePath = document.getElementById('doodlePath');
+  var doodlePen = document.getElementById('doodlePen');
+  var doodleLen = 0;
+  function buildDoodle(){
+    doodleLen = 0;
+    if(reduce || !doodle || !doodleRail || !doodlePath) return;
+    var w = doodle.clientWidth, h = doodle.clientHeight;
+    if(w < 10 || h < 40) return;
+    doodleRail.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    var midx = w*0.5, amp = w*0.30, seg = 8, d = 'M' + midx.toFixed(1) + ',3';
+    for(var i=1;i<=seg;i++){
+      var y = (h-6)*(i/seg)+3, yc = (h-6)*((i-0.5)/seg)+3, cx = midx + ((i%2===0)?1:-1)*amp;
+      d += ' Q' + cx.toFixed(1) + ',' + yc.toFixed(1) + ' ' + midx.toFixed(1) + ',' + y.toFixed(1);
+    }
+    doodlePath.setAttribute('d', d);
+    doodleLen = doodlePath.getTotalLength();
+    doodlePath.style.strokeDasharray = doodleLen;
+    doodlePath.style.strokeDashoffset = doodleLen;
+  }
+  function updateDoodle(prog){
+    if(!doodleLen) return;
+    var drawn = doodleLen * Math.max(0, Math.min(1, prog));
+    doodlePath.style.strokeDashoffset = (doodleLen - drawn);
+    if(doodlePen){ var pt = doodlePath.getPointAtLength(drawn); doodlePen.style.transform = 'translate(' + pt.x.toFixed(1) + 'px,' + pt.y.toFixed(1) + 'px)'; }
+  }
+  if(!reduce && doodle){ buildDoodle(); requestAnimationFrame(function(){ doodle.classList.add('lit'); }); }
+
   // scroll-progress bar + back-to-top + scroll cue + hero parallax
   function onScroll(){
     var st = window.scrollY || document.documentElement.scrollTop || 0;
@@ -927,13 +983,14 @@
     elBar.style.width = (h>0 ? Math.min(100, st/h*100) : 0) + '%';
     totop.classList.toggle('show', st > vh*0.7);
     if(scrollcue) scrollcue.classList.toggle('hide', st > 40);
+    if(doodleLen){ updateDoodle(h>0 ? st/h : 0); }
     if(!reduce && coverWrap){
       if(st < vh){ coverWrap.style.transform='translate3d(0,'+(st*0.22)+'px,0)'; coverWrap.style.opacity=String(Math.max(0,1-(st/vh)*0.95)); }
       else if(coverWrap.style.opacity!=='0'){ coverWrap.style.opacity='0'; }
     }
   }
   window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', onScroll, {passive:true});
+  window.addEventListener('resize', function(){ buildDoodle(); onScroll(); }, {passive:true});
   onScroll();
   totop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
 })();

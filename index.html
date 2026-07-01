@@ -13,6 +13,8 @@
     --teal:#2dd4bf; --cyan:#38bdf8; --indigo:#818cf8;
     --amber:#fbbf24; --green:#34d399; --rose:#fb7185;
     --grad: linear-gradient(120deg,#2dd4bf 0%,#38bdf8 45%,#818cf8 100%);
+    --ease-out: cubic-bezier(.2,.7,.1,1);
+    --ease-sig: cubic-bezier(.6,0,.2,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden}
@@ -48,6 +50,9 @@
     background:rgba(255,255,255,.18);transition:.25s}
   .dot:hover{background:rgba(255,255,255,.5);transform:scale(1.3)}
   .dot.on{background:var(--teal);box-shadow:0 0 10px rgba(45,212,191,.7);transform:scale(1.35)}
+  .dot.done{background:var(--green);box-shadow:0 0 8px rgba(52,211,153,.55)}
+  .dotnav::before{content:"";position:absolute;top:-6px;bottom:-6px;left:50%;width:2px;
+    transform:translateX(-50%);background:rgba(255,255,255,.07);border-radius:2px;z-index:-1}
 
   /* back-to-top */
   .totop{position:fixed;right:32px;bottom:26px;z-index:50;width:44px;height:44px;border-radius:50%;
@@ -259,15 +264,95 @@
     0%,100%{box-shadow:0 0 0 6px rgba(251,191,36,.15),0 0 18px rgba(251,191,36,.4)}
     50%{box-shadow:0 0 0 11px rgba(251,191,36,.04),0 0 30px rgba(251,191,36,.85)}}
 
+  /* ============ SIGNATURE LAYER — intro · self-drawing signature · wipe reveals ============ */
+  /* graceful clip-wipe reveal for section headlines (opacity from .rise, motion from the wipe) */
+  .scene h1,.scene h2{-webkit-clip-path:inset(0 100% -14% -2%);clip-path:inset(0 100% -14% -2%)}
+  .scene.active h1,.scene.active h2{-webkit-clip-path:inset(0 -2% -14% -2%);clip-path:inset(0 -2% -14% -2%);
+    transition:-webkit-clip-path .95s var(--ease-sig) calc(var(--i,0)*70ms + .04s),clip-path .95s var(--ease-sig) calc(var(--i,0)*70ms + .04s)}
+  .scene h1.rise,.scene h2.rise{transform:none}
+
+  /* self-drawing "Puru Ranjan" signature (used at the close + in the intro) */
+  .sig{display:inline-block;position:relative;padding:4px 10px 20px;line-height:1}
+  .sig-name{display:inline-block;
+    font-family:'Snell Roundhand','Brush Script MT','Segoe Script','Bradley Hand',cursive;
+    font-weight:600;font-size:clamp(46px,6.4vw,80px);letter-spacing:.5px;
+    background:linear-gradient(100deg,#eef4ff,#8fe9df 55%,#aeb9ff);-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    -webkit-clip-path:inset(0 100% -20% -8%);clip-path:inset(0 100% -20% -8%);will-change:clip-path}
+  .sig.go .sig-name{-webkit-clip-path:inset(0 -8% -20% -8%);clip-path:inset(0 -8% -20% -8%);
+    transition:-webkit-clip-path 1.5s var(--ease-sig) .15s,clip-path 1.5s var(--ease-sig) .15s}
+  .sig-underline{position:absolute;left:6px;right:6px;bottom:6px;width:calc(100% - 12px);height:22px;overflow:visible}
+  .sig-underline path{fill:none;stroke:url(#sigGrad);stroke-width:3;stroke-linecap:round;
+    stroke-dasharray:360;stroke-dashoffset:360}
+  .sig.go .sig-underline path{stroke-dashoffset:0;transition:stroke-dashoffset 1.2s var(--ease-sig) .5s}
+  .sig-pen{position:absolute;left:0;top:32%;width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle,#c9fbf3,rgba(45,212,191,.15));box-shadow:0 0 14px 2px rgba(45,212,191,.85);opacity:0}
+  .sig.go .sig-pen{animation:penride 1.5s var(--ease-sig) .15s}
+  @keyframes penride{0%{opacity:0;left:2%}10%{opacity:1}90%{opacity:1}100%{opacity:0;left:98%}}
+
+  /* signature intro overlay */
+  .intro{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
+    background:radial-gradient(1200px 760px at 50% 42%,rgba(45,212,191,.12),transparent 60%),linear-gradient(160deg,#070a14,#0c1120 60%,#0f1830);
+    transition:opacity .85s ease,visibility .85s}
+  .intro.gone{opacity:0;visibility:hidden;pointer-events:none}
+  .intro-inner{text-align:center;transition:transform .85s var(--ease-out)}
+  .intro.gone .intro-inner{transform:translateY(-18px)}
+  .intro-mono{width:74px;height:74px;border-radius:19px;margin:0 auto 6px;display:grid;place-items:center;
+    font-weight:800;font-size:29px;color:#06121a;background:var(--grad);
+    box-shadow:0 16px 46px rgba(45,212,191,.4);opacity:0;transform:scale(.55) rotate(-10deg);
+    animation:monoIn .8s var(--ease-out) .1s forwards}
+  @keyframes monoIn{to{opacity:1;transform:none}}
+  .intro-sub{margin-top:12px;font-size:12px;letter-spacing:.36em;text-transform:uppercase;color:var(--mut);
+    opacity:0;animation:sfadeUp .8s ease 1.15s forwards}
+  @keyframes sfadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+  .intro-hint{position:absolute;left:0;right:0;bottom:32px;text-align:center;font-size:10.5px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--dim);opacity:0;animation:sfadeUp .8s ease 2s forwards}
+
+  /* scroll cue */
+  .scrollcue{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;
+    display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--dim);
+    font-size:10px;letter-spacing:.3em;text-transform:uppercase;opacity:0;
+    animation:sfadeUp .8s ease 2.7s forwards;transition:opacity .5s}
+  .scrollcue i{width:15px;height:15px;border-right:1.5px solid var(--mut);border-bottom:1.5px solid var(--mut);
+    animation:bob 1.9s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:rotate(45deg) translate(-2px,-2px);opacity:.45}50%{transform:rotate(45deg) translate(2px,2px);opacity:1}}
+  .scrollcue.hide{opacity:0;pointer-events:none;animation:none}
+  #stage>.scene:first-child .wrap{will-change:transform,opacity}
+
   /* accessibility: honor reduced-motion */
   @media (prefers-reduced-motion: reduce){
     .aurora{display:none}
     .scene{filter:none}
+    .intro{display:none!important}
+    .scene h1,.scene h2,.sig-name{-webkit-clip-path:none!important;clip-path:none!important}
+    .sig-underline path{stroke-dashoffset:0!important}
+    #stage>.scene:first-child .wrap{transform:none!important;opacity:1!important}
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important}
   }
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="sigGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#2dd4bf"/><stop offset="0.55" stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+  </linearGradient>
+</defs></svg>
+
+<div class="intro" id="intro">
+  <div class="intro-inner">
+    <div class="intro-mono">PR</div>
+    <div class="sig" id="sig-intro">
+      <span class="sig-pen"></span>
+      <span class="sig-name">Puru Ranjan</span>
+      <svg class="sig-underline" viewBox="0 0 320 26" preserveAspectRatio="none"><path d="M8,15 C70,4 140,22 200,12 C244,5 288,9 313,17"/></svg>
+    </div>
+    <div class="intro-sub">Six-Month Review</div>
+  </div>
+  <div class="intro-hint">Scroll or click to enter</div>
+</div>
+
+<div class="scrollcue" id="scrollcue"><span>Scroll</span><i></i></div>
 
 <div class="aurora"><span></span><span></span><span></span></div>
 
@@ -732,7 +817,12 @@
       <div class="eyebrow rise" style="--i:0">Six months in <span class="dot">·</span> ready for the next</div>
       <h1 class="rise" style="--i:1"><span class="g">Built. Shipped.</span><br>Kept it running.</h1>
       <p class="lead rise" style="--i:2;margin-top:22px">Thank you for the read — happy to walk through any of this in detail.</p>
-      <div class="sign rise" style="--i:3">
+      <div class="sig rise" id="sig-close" style="--i:3;margin-top:8px">
+        <span class="sig-pen"></span>
+        <span class="sig-name">Puru Ranjan</span>
+        <svg class="sig-underline" viewBox="0 0 320 26" preserveAspectRatio="none"><path d="M8,15 C70,4 140,22 200,12 C244,5 288,9 313,17"/></svg>
+      </div>
+      <div class="sign rise" style="--i:4">
         <span class="chip"><b>Puru Ranjan</b></span>
         <span class="chip">DevOps Engineer · TIU Consulting</span>
         <span class="chip">puru.ranjan@tiuconsulting.com</span>
@@ -783,6 +873,7 @@
       if(e.isIntersecting){
         e.target.classList.add('active');
         if(!e.target.dataset.counted){ e.target.dataset.counted = '1'; animateCounts(e.target); }
+        var _sig = e.target.querySelector('.sig'); if(_sig) _sig.classList.add('go');
       }
     });
   }, {threshold:0.2});
@@ -794,7 +885,7 @@
       if(e.isIntersecting){
         var idx = scenes.indexOf(e.target);
         elCur.textContent = String(idx+1).padStart(2,'0');
-        dots.forEach(function(d,i){ d.classList.toggle('on', i===idx); });
+        dots.forEach(function(d,i){ d.classList.toggle('on', i===idx); d.classList.toggle('done', i<idx); });
       }
     });
   }, {rootMargin:'-45% 0px -45% 0px'});
@@ -803,12 +894,43 @@
   // guarantee the hero is visible on first paint (don't depend on the observer)
   requestAnimationFrame(function(){ scenes[0].classList.add('active'); });
 
-  // scroll-progress bar + back-to-top
+  // — signature intro · scroll cue · hero parallax —
+  var intro = document.getElementById('intro');
+  var introSig = document.getElementById('sig-intro');
+  var scrollcue = document.getElementById('scrollcue');
+  var coverWrap = scenes[0].querySelector('.wrap');
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function dismissIntro(){
+    if(!intro || intro.classList.contains('gone')) return;
+    intro.classList.add('gone');
+    document.documentElement.style.overflow='';
+    setTimeout(function(){ if(intro) intro.style.display='none'; }, 900);
+  }
+  if(intro){
+    if(reduce){ intro.style.display='none'; }
+    else {
+      document.documentElement.style.overflow='hidden';
+      if(introSig){ setTimeout(function(){ introSig.classList.add('go'); }, 480); }
+      setTimeout(dismissIntro, 2500);
+      ['wheel','touchstart','keydown','pointerdown'].forEach(function(ev){
+        window.addEventListener(ev, dismissIntro, {once:true, passive:true});
+      });
+    }
+  }
+
+  // scroll-progress bar + back-to-top + scroll cue + hero parallax
   function onScroll(){
     var st = window.scrollY || document.documentElement.scrollTop || 0;
-    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var vh = window.innerHeight;
+    var h = document.documentElement.scrollHeight - vh;
     elBar.style.width = (h>0 ? Math.min(100, st/h*100) : 0) + '%';
-    totop.classList.toggle('show', st > window.innerHeight*0.7);
+    totop.classList.toggle('show', st > vh*0.7);
+    if(scrollcue) scrollcue.classList.toggle('hide', st > 40);
+    if(!reduce && coverWrap){
+      if(st < vh){ coverWrap.style.transform='translate3d(0,'+(st*0.22)+'px,0)'; coverWrap.style.opacity=String(Math.max(0,1-(st/vh)*0.95)); }
+      else if(coverWrap.style.opacity!=='0'){ coverWrap.style.opacity='0'; }
+    }
   }
   window.addEventListener('scroll', onScroll, {passive:true});
   window.addEventListener('resize', onScroll, {passive:true});

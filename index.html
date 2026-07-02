@@ -335,6 +335,18 @@
   @keyframes penbob{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(4deg) translateY(1px)}}
   @media (max-width:1280px){ .doodle{display:none} }
 
+  /* editorial 'In my words' — pretext-rendered magazine text wrapping a circular emblem */
+  .editorial{position:relative;max-width:600px;margin:30px auto 0;text-align:left;min-height:60px}
+  .ed-emblem{position:absolute;left:0;top:4px;width:128px;height:128px;border-radius:50%;
+    background:var(--grad);display:grid;place-items:center;
+    font-weight:800;font-size:42px;letter-spacing:1px;color:#06121a;
+    box-shadow:0 16px 44px rgba(45,212,191,.32);z-index:1}
+  .ed-canvas{position:relative;width:100%}
+  .ed-line{position:absolute;white-space:nowrap;font:18px/1 Georgia,'Times New Roman',serif;color:#cdd7ea}
+  .ed-fallback{display:none;font:18px/1.7 Georgia,'Times New Roman',serif;color:#cdd7ea;margin:0}
+  .ed-credit{margin-top:22px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .ed-credit b{color:var(--mut);font-weight:600}
+
   /* accessibility: honor reduced-motion */
   @media (prefers-reduced-motion: reduce){
     .aurora{display:none}
@@ -850,7 +862,21 @@
     </div>
   </section>
 
-  <!-- 15 · CLOSE -->
+  <!-- 16 · IN MY WORDS (editorial · pretext) -->
+  <section class="scene" data-title="In my words">
+    <div class="wrap">
+      <div class="kick rise" style="--i:0">In my words <span class="n">16</span></div>
+      <h2 class="rise" style="--i:1">A word, <span class="g">between deploys</span></h2>
+      <div class="editorial rise" style="--i:2" id="editorial">
+        <div class="ed-emblem" id="edEmblem">PR</div>
+        <div class="ed-canvas" id="edCanvas"></div>
+        <p class="ed-fallback" id="edFallback">Six months ago I was handed one client's production and a login. I didn't expect to end them owning a second cloud, three shipped applications, and the quiet machinery that keeps them honest at three in the morning. The lesson wasn't how to keep the lights on — it was how to build the switches so they never go out, and to leave every system a little more legible than I found it. There's plenty I still want to sharpen. But six months in, the work speaks for itself.</p>
+        <div class="ed-credit rise" style="--i:3">Text set with <b>pretext</b> · canvas-measured line-breaking, wrapping the mark with zero reflow</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 · CLOSE -->
   <section class="scene fin" data-title="Thank you">
     <div class="wrap">
       <div class="eyebrow rise" style="--i:0">Six months in <span class="dot">·</span> ready for the next</div>
@@ -1006,6 +1032,62 @@
   window.addEventListener('resize', function(){ buildDoodle(); onScroll(); }, {passive:true});
   onScroll();
   totop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+})();
+</script>
+
+<script>
+/* Editorial section: render a short reflection with pretext so the text hugs the circular mark.
+   Progressive enhancement — if the library (loaded from a CDN) fails, a plain paragraph shows instead. */
+(async function(){
+  var host = document.getElementById('edCanvas');
+  var emblem = document.getElementById('edEmblem');
+  var fallback = document.getElementById('edFallback');
+  var credit = document.querySelector('.ed-credit');
+  if(!host || !fallback) return;
+  var text = fallback.textContent.trim();
+  function showFallback(){ fallback.style.display='block'; host.style.display='none';
+    if(emblem) emblem.style.display='none'; if(credit) credit.style.display='none'; }
+  var FS=18, LH=29, FONT=FS+"px Georgia";
+  var mod;
+  try { mod = await import('https://esm.sh/@chenglou/pretext'); }
+  catch(e){ showFallback(); return; }
+  var api = (typeof mod.prepareWithSegments==='function') ? mod : (mod.default || mod);
+  var prep = api.prepareWithSegments, next = api.layoutNextLineRange, mat = api.materializeLineRange;
+  if(typeof prep!=='function' || typeof next!=='function' || typeof mat!=='function'){ showFallback(); return; }
+  function render(){
+    var colWidth = host.clientWidth;
+    if(colWidth < 60) return;
+    var prepared;
+    try { prepared = prep(text, FONT); } catch(e){ showFallback(); return; }
+    host.innerHTML='';
+    var D=128, r=D/2, gap=22;
+    var emblemTop = emblem ? (emblem.offsetTop - host.offsetTop) : -9999;
+    var cursor={segmentIndex:0,graphemeIndex:0}, y=0, guard=0, prev='';
+    while(guard++ < 600){
+      var x=0, avail=colWidth;
+      var relTop = y - emblemTop, relBot = y + LH - emblemTop;
+      if(emblem && relBot>0 && relTop<D){
+        var nearest = Math.max(relTop, Math.min(relBot, r));
+        var dy = nearest - r, half = Math.sqrt(Math.max(0, r*r - dy*dy));
+        x = r + half + gap; avail = colWidth - x;
+      }
+      if(avail < 60) avail = 60;
+      var range; try { range = next(prepared, cursor, avail); } catch(e){ break; }
+      if(!range) break;
+      var line; try { line = mat(prepared, range); } catch(e){ break; }
+      var div = document.createElement('div');
+      div.className='ed-line'; div.textContent = line.text;
+      div.style.left = Math.round(x)+'px'; div.style.top = y+'px';
+      host.appendChild(div);
+      var key = range.end.segmentIndex+':'+range.end.graphemeIndex;
+      if(key===prev) break; prev=key;
+      cursor = range.end; y += LH;
+    }
+    host.style.height = (y+6) + 'px';
+    if(host.childElementCount===0) showFallback();
+  }
+  render();
+  var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(render, 200); }, {passive:true});
 })();
 </script>
 </body>

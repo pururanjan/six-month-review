@@ -1089,14 +1089,7 @@
     host.style.height = (y+6) + 'px';
     if(host.childElementCount===0) showFallback();
   }
-  // render when the section nears the viewport (robust with content-visibility) + on resize
-  var sec = document.getElementById('editorial').closest('.scene') || document.getElementById('editorial');
-  try {
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){ if(e.isIntersecting) render(); });
-    }, {rootMargin:'400px 0px'});
-    io.observe(sec);
-  } catch(e){ render(); }
+  render();
   var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(render, 200); }, {passive:true});
 })();
 </script>
